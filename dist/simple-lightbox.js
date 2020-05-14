@@ -6,7 +6,15 @@
 */
 "use strict";
 
-function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return; var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(n); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
@@ -242,9 +250,60 @@ var SimpleLightbox = /*#__PURE__*/function () {
     }
 
     this.addEvents();
-  }
+    this.removeDuplicateElements();
+  } // Get rid of duplicate elements. If more than one thumbnail on page links to the same image, we only want
+  // the image in the gallery once
+
 
   _createClass(SimpleLightbox, [{
+    key: "removeDuplicateElements",
+    value: function removeDuplicateElements() {
+      var elementOccurrenceCount = {};
+
+      var _iterator = _createForOfIteratorHelper(this.elements),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var el = _step.value;
+          var existing = elementOccurrenceCount[el.href];
+
+          if (existing != undefined) {
+            elementOccurrenceCount[el.href]++;
+          } else {
+            elementOccurrenceCount[el.href] = 1;
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      for (var _i = 0, _Object$entries = Object.entries(elementOccurrenceCount); _i < _Object$entries.length; _i++) {
+        var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
+            k = _Object$entries$_i[0],
+            count = _Object$entries$_i[1];
+
+        // if there is more than one occurrence
+        if (count > 1) {
+          // remove items until the count is only 1
+          var i = this.elements.length;
+
+          while (i--) {
+            if (this.elements[i].href == k) {
+              this.elements.splice(i, 1);
+              count--;
+            }
+
+            if (count === 1) {
+              break;
+            }
+          }
+        }
+      }
+    }
+  }, {
     key: "createDomNodes",
     value: function createDomNodes() {
       this.domNodes.overlay = document.createElement('div');
@@ -1103,6 +1162,11 @@ var SimpleLightbox = /*#__PURE__*/function () {
     value: function openImage(element) {
       var _this8 = this;
 
+      // The element clicked may not be the element we want to show in the lightbox.
+      // See the removeDuplicateElements method for info. 
+      element = this.elements.find(function (e) {
+        return e.href = element.href;
+      });
       element.dispatchEvent(new Event('show.' + this.eventNamespace));
 
       if (this.options.disableScroll) {
@@ -1169,38 +1233,38 @@ var SimpleLightbox = /*#__PURE__*/function () {
       elements = this.wrap(elements);
       events = this.wrap(events);
 
-      var _iterator = _createForOfIteratorHelper(elements),
-          _step;
+      var _iterator2 = _createForOfIteratorHelper(elements),
+          _step2;
 
       try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var element = _step.value;
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var element = _step2.value;
 
           if (!element.namespaces) {
             element.namespaces = {};
           } // save the namespaces addEventListener the DOM element itself
 
 
-          var _iterator2 = _createForOfIteratorHelper(events),
-              _step2;
+          var _iterator3 = _createForOfIteratorHelper(events),
+              _step3;
 
           try {
-            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-              var event = _step2.value;
+            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+              var event = _step3.value;
               var options = opts || false;
               element.namespaces[event] = callback;
               element.addEventListener(event.split('.')[0], callback, options);
             }
           } catch (err) {
-            _iterator2.e(err);
+            _iterator3.e(err);
           } finally {
-            _iterator2.f();
+            _iterator3.f();
           }
         }
       } catch (err) {
-        _iterator.e(err);
+        _iterator2.e(err);
       } finally {
-        _iterator.f();
+        _iterator2.f();
       }
     }
   }, {
@@ -1209,32 +1273,32 @@ var SimpleLightbox = /*#__PURE__*/function () {
       elements = this.wrap(elements);
       events = this.wrap(events);
 
-      var _iterator3 = _createForOfIteratorHelper(elements),
-          _step3;
+      var _iterator4 = _createForOfIteratorHelper(elements),
+          _step4;
 
       try {
-        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-          var element = _step3.value;
+        for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+          var element = _step4.value;
 
-          var _iterator4 = _createForOfIteratorHelper(events),
-              _step4;
+          var _iterator5 = _createForOfIteratorHelper(events),
+              _step5;
 
           try {
-            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-              var event = _step4.value;
+            for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+              var event = _step5.value;
               element.removeEventListener(event.split('.')[0], element.namespaces[event]);
               delete element.namespaces[event];
             }
           } catch (err) {
-            _iterator4.e(err);
+            _iterator5.e(err);
           } finally {
-            _iterator4.f();
+            _iterator5.f();
           }
         }
       } catch (err) {
-        _iterator3.e(err);
+        _iterator4.e(err);
       } finally {
-        _iterator3.f();
+        _iterator4.f();
       }
     }
   }, {
@@ -1244,18 +1308,18 @@ var SimpleLightbox = /*#__PURE__*/function () {
 
       elements = this.wrap(elements);
 
-      var _iterator5 = _createForOfIteratorHelper(elements),
-          _step5;
+      var _iterator6 = _createForOfIteratorHelper(elements),
+          _step6;
 
       try {
-        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-          var element = _step5.value;
+        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+          var element = _step6.value;
           element.style.opacity = 1;
         }
       } catch (err) {
-        _iterator5.e(err);
+        _iterator6.e(err);
       } finally {
-        _iterator5.f();
+        _iterator6.f();
       }
 
       var step = 16.66666 / (duration || 300),
@@ -1263,35 +1327,35 @@ var SimpleLightbox = /*#__PURE__*/function () {
         var currentOpacity = parseFloat(elements[0].style.opacity);
 
         if ((currentOpacity -= step) < 0) {
-          var _iterator6 = _createForOfIteratorHelper(elements),
-              _step6;
-
-          try {
-            for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-              var element = _step6.value;
-              element.style.display = "none";
-              element.style.opacity = '';
-            }
-          } catch (err) {
-            _iterator6.e(err);
-          } finally {
-            _iterator6.f();
-          }
-
-          callback && callback.call(_this9, elements);
-        } else {
           var _iterator7 = _createForOfIteratorHelper(elements),
               _step7;
 
           try {
             for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var _element = _step7.value;
-              _element.style.opacity = currentOpacity;
+              var element = _step7.value;
+              element.style.display = "none";
+              element.style.opacity = '';
             }
           } catch (err) {
             _iterator7.e(err);
           } finally {
             _iterator7.f();
+          }
+
+          callback && callback.call(_this9, elements);
+        } else {
+          var _iterator8 = _createForOfIteratorHelper(elements),
+              _step8;
+
+          try {
+            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+              var _element = _step8.value;
+              _element.style.opacity = currentOpacity;
+            }
+          } catch (err) {
+            _iterator8.e(err);
+          } finally {
+            _iterator8.f();
           }
 
           requestAnimationFrame(fade);
@@ -1307,19 +1371,19 @@ var SimpleLightbox = /*#__PURE__*/function () {
 
       elements = this.wrap(elements);
 
-      var _iterator8 = _createForOfIteratorHelper(elements),
-          _step8;
+      var _iterator9 = _createForOfIteratorHelper(elements),
+          _step9;
 
       try {
-        for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-          var element = _step8.value;
+        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+          var element = _step9.value;
           element.style.opacity = 0;
           element.style.display = display || "block";
         }
       } catch (err) {
-        _iterator8.e(err);
+        _iterator9.e(err);
       } finally {
-        _iterator8.f();
+        _iterator9.f();
       }
 
       var opacityTarget = parseFloat(elements[0].dataset.opacityTarget || 1),
@@ -1328,34 +1392,34 @@ var SimpleLightbox = /*#__PURE__*/function () {
         var currentOpacity = parseFloat(elements[0].style.opacity);
 
         if (!((currentOpacity += step) > opacityTarget)) {
-          var _iterator9 = _createForOfIteratorHelper(elements),
-              _step9;
-
-          try {
-            for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-              var element = _step9.value;
-              element.style.opacity = currentOpacity;
-            }
-          } catch (err) {
-            _iterator9.e(err);
-          } finally {
-            _iterator9.f();
-          }
-
-          requestAnimationFrame(fade);
-        } else {
           var _iterator10 = _createForOfIteratorHelper(elements),
               _step10;
 
           try {
             for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-              var _element2 = _step10.value;
-              _element2.style.opacity = '';
+              var element = _step10.value;
+              element.style.opacity = currentOpacity;
             }
           } catch (err) {
             _iterator10.e(err);
           } finally {
             _iterator10.f();
+          }
+
+          requestAnimationFrame(fade);
+        } else {
+          var _iterator11 = _createForOfIteratorHelper(elements),
+              _step11;
+
+          try {
+            for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+              var _element2 = _step11.value;
+              _element2.style.opacity = '';
+            }
+          } catch (err) {
+            _iterator11.e(err);
+          } finally {
+            _iterator11.f();
           }
 
           callback && callback.call(_this10, elements);
@@ -1369,19 +1433,19 @@ var SimpleLightbox = /*#__PURE__*/function () {
     value: function hide(elements) {
       elements = this.wrap(elements);
 
-      var _iterator11 = _createForOfIteratorHelper(elements),
-          _step11;
+      var _iterator12 = _createForOfIteratorHelper(elements),
+          _step12;
 
       try {
-        for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
-          var element = _step11.value;
+        for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+          var element = _step12.value;
           element.dataset.initialDisplay = element.style.display;
           element.style.display = 'none';
         }
       } catch (err) {
-        _iterator11.e(err);
+        _iterator12.e(err);
       } finally {
-        _iterator11.f();
+        _iterator12.f();
       }
     }
   }, {
@@ -1389,18 +1453,18 @@ var SimpleLightbox = /*#__PURE__*/function () {
     value: function show(elements, display) {
       elements = this.wrap(elements);
 
-      var _iterator12 = _createForOfIteratorHelper(elements),
-          _step12;
+      var _iterator13 = _createForOfIteratorHelper(elements),
+          _step13;
 
       try {
-        for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
-          var element = _step12.value;
+        for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+          var element = _step13.value;
           element.style.display = element.dataset.initialDisplay || display || 'block';
         }
       } catch (err) {
-        _iterator12.e(err);
+        _iterator13.e(err);
       } finally {
-        _iterator12.f();
+        _iterator13.f();
       }
     }
   }, {
@@ -1413,36 +1477,36 @@ var SimpleLightbox = /*#__PURE__*/function () {
     value: function on(events, callback) {
       events = this.wrap(events);
 
-      var _iterator13 = _createForOfIteratorHelper(this.elements),
-          _step13;
+      var _iterator14 = _createForOfIteratorHelper(this.elements),
+          _step14;
 
       try {
-        for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
-          var element = _step13.value;
+        for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
+          var element = _step14.value;
 
           if (!element.fullyNamespacedEvents) {
             element.fullyNamespacedEvents = {};
           }
 
-          var _iterator14 = _createForOfIteratorHelper(events),
-              _step14;
+          var _iterator15 = _createForOfIteratorHelper(events),
+              _step15;
 
           try {
-            for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
-              var event = _step14.value;
+            for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
+              var event = _step15.value;
               element.fullyNamespacedEvents[event] = callback;
               element.addEventListener(event, callback);
             }
           } catch (err) {
-            _iterator14.e(err);
+            _iterator15.e(err);
           } finally {
-            _iterator14.f();
+            _iterator15.f();
           }
         }
       } catch (err) {
-        _iterator13.e(err);
+        _iterator14.e(err);
       } finally {
-        _iterator13.f();
+        _iterator14.f();
       }
 
       return this;
@@ -1452,34 +1516,34 @@ var SimpleLightbox = /*#__PURE__*/function () {
     value: function off(events) {
       events = this.wrap(events);
 
-      var _iterator15 = _createForOfIteratorHelper(this.elements),
-          _step15;
+      var _iterator16 = _createForOfIteratorHelper(this.elements),
+          _step16;
 
       try {
-        for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
-          var element = _step15.value;
+        for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
+          var element = _step16.value;
 
-          var _iterator16 = _createForOfIteratorHelper(events),
-              _step16;
+          var _iterator17 = _createForOfIteratorHelper(events),
+              _step17;
 
           try {
-            for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
-              var event = _step16.value;
+            for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
+              var event = _step17.value;
 
               if (typeof element.fullyNamespacedEvents !== 'undefined' && event in element.fullyNamespacedEvents) {
                 element.removeEventListener(event, element.fullyNamespacedEvents[event]);
               }
             }
           } catch (err) {
-            _iterator16.e(err);
+            _iterator17.e(err);
           } finally {
-            _iterator16.f();
+            _iterator17.f();
           }
         }
       } catch (err) {
-        _iterator15.e(err);
+        _iterator16.e(err);
       } finally {
-        _iterator15.f();
+        _iterator16.f();
       }
 
       return this;

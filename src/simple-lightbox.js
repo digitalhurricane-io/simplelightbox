@@ -207,6 +207,45 @@ class SimpleLightbox {
         }
 
         this.addEvents();
+
+        this.removeDuplicateElements();
+    }
+
+    // Get rid of duplicate elements. If more than one thumbnail on page links to the same image, we only want
+    // the image in the gallery once
+    removeDuplicateElements() {
+        const elementOccurrenceCount = {};
+        for (let el of this.elements) {
+
+            const existing = elementOccurrenceCount[el.href];
+            if (existing != undefined) {
+                elementOccurrenceCount[el.href]++
+            } else {
+                elementOccurrenceCount[el.href] = 1;
+            }
+
+        }
+
+        for (let [k, count] of Object.entries(elementOccurrenceCount)) {
+
+            // if there is more than one occurrence
+            if (count > 1) {
+
+                // remove items until the count is only 1
+                let i = this.elements.length;
+                while(i--) {
+
+                    if (this.elements[i].href == k) {
+                        this.elements.splice(i, 1);
+                        count--;
+                    }
+
+                    if (count === 1) {
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     createDomNodes() {
@@ -1014,6 +1053,11 @@ class SimpleLightbox {
     }
 
     openImage(element) {
+
+        // The element clicked may not be the element we want to show in the lightbox.
+        // See the removeDuplicateElements method for info. 
+        element = this.elements.find((e) => e.href = element.href);
+
         element.dispatchEvent(new Event('show.' + this.eventNamespace));
 
         if (this.options.disableScroll) {

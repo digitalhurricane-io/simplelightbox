@@ -1,5 +1,10 @@
-# simplelightbox
-Touch-friendly image lightbox for mobile and desktop
+# Fork of simplelightbox
+Changes in this fork:
+
+Removes duplicate elements from lightbox. 
+
+If more than one thumbnail links to the same image in the lightbox, only 1 of that image will
+be shown in the lightbox.
 
 ### Features
 * responsive
